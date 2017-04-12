@@ -1,0 +1,6 @@
+.byebug_history
+vendor/bundle
+.bundle
+*.swp
+config/*.yml
+samples

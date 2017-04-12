@@ -1,0 +1,9 @@
+---
+trello:
+  developer_public_key:
+  member_token:
+
+kanboard:
+  host:
+  path:
+  api_token:

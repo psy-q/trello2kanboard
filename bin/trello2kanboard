@@ -1,0 +1,51 @@
+#!/usr/bin/env ruby
+require 'yaml'
+require 'trello'
+require 'kanboard'
+require 'table_print'
+require 'byebug'
+
+command = ARGV[0]
+@config = YAML::load_file('config/trello2kanboard.yml')
+
+Trello.configure do |config|
+  config.developer_public_key = @config['trello']['developer_public_key']
+  config.member_token = @config['trello']['member_token']
+end
+
+def list_trello_boards
+  tp Trello::Board.all, "id", "name", url: { width: 255 }
+end
+
+def list_kanboard_projects
+  tp Kanboard::Project.all
+end
+
+def import_board(source_board_id, target_project_id)
+end
+
+if command 
+
+  # Lists existing Trello boards/Kanboard projects via API
+  if command == 'list'
+    list_trello_boards
+    list_kanboard_projects
+
+  # Imports cards from Trello to Kanboard via API
+  elsif command == 'import'
+    source_board_id = ARGV[1]
+    target_project_id = ARGV[2]
+    if source_board_id && target_project_id
+      import_board(source_board_id, target_project_id)
+    else
+      puts "Set source board ID and target project ID, please: import f00b4r 5"
+    end
+
+  # Converts a CSV file from Trello format to Kanboard format
+  elsif command == 'convert'
+
+  end
+else
+  puts "Please supply a command: import, list"
+  exit
+end
