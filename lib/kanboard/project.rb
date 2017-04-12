@@ -4,7 +4,7 @@ module Kanboard
 
     class << self 
       def all
-        client.getBoards
+        client.projects
       end
     end
 

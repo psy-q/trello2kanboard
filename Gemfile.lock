@@ -2,6 +2,7 @@ PATH
   remote: .
   specs:
     trello2kanboard (0.1.0)
+      faraday (~> 0.12)
       jsonrpc-client (~> 0.1)
       ruby-trello (~> 2.0)
       table_print (~> 1.5)
