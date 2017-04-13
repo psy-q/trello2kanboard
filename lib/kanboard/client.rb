@@ -3,6 +3,8 @@ require 'faraday'
 
 module Kanboard
 
+  # Very thin wrapper around the Kanboard JSON-RPC 2.0 API
+  # Mostly just gives more ruby-ish appearance to the various RPC calls
   class Client
     def initialize
       config_file = YAML::load_file('config/trello2kanboard.yml')
