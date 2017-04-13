@@ -1,5 +1,6 @@
 #!/usr/bin/env ruby
 require 'yaml'
+require 'cli'
 require 'trello'
 require 'kanboard'
 require 'kanboard/csv'
@@ -15,27 +16,6 @@ Trello.configure do |config|
   config.developer_public_key = @config['trello']['developer_public_key']
   config.member_token = @config['trello']['member_token']
 end
-
-def list_trello_boards
-  puts "\n\nTrello:\n"
-  tp Trello::Board.all, "id", "name", url: { width: 255 }
-end
-
-def list_kanboard_projects
-  puts "\n\nKanboard:\n"
-  projects = @rpc.projects.map {|project|
-    { 
-      id: project['id'],
-      name: project['name'],
-      url: project['url']['board']
-    }
-  }
-  tp projects, 'id', 'name', url: { width: 255 }
-end
-
-def import_board(source_board_id, target_project_id)
-end
-
 
 if command 
   # Lists existing Trello boards/Kanboard projects via API
