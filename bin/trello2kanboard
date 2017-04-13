@@ -38,7 +38,6 @@ end
 
 
 if command 
-
   # Lists existing Trello boards/Kanboard projects via API
   if command == 'list'
     list_trello_boards

@@ -21,6 +21,22 @@ module Kanboard
       @rpc.getAllProjects
     end
 
+    def columns(project_id)
+      @rpc.getColumns(project_id)
+    end
+
+    def tasks(project_id, column_id = nil)
+      all_tasks = @rpc.getAllTasks(project_id)
+      if column_id != nil
+        tasks = all_tasks.select { |task|
+          task if task['column_id'].to_i == column_id.to_i
+        }
+      else
+        tasks = all_tasks
+      end
+      tasks
+    end
+
   end
 
 end
