@@ -37,6 +37,10 @@ module Kanboard
       tasks
     end
 
+    def subtasks(task_id)
+      @rpc.getAllSubtasks(task_id)
+    end
+
   end
 
 end

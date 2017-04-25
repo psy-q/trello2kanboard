@@ -16,5 +16,15 @@ def list_kanboard_projects
   tp projects, 'id', 'name', url: { width: 255 }
 end
 
+def has_checklists?(task_id)
+
+end
+
 def import_board(source_board_id, target_project_id)
+  lists = Trello::Board.find(source_board_id)
+  lists.each do |list|
+    # und hier list.cards.each usw.
+  end
+  byebug
+  puts 'foo'
 end
