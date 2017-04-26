@@ -33,13 +33,16 @@ def import_card(card, target_project_id)
   if existing_tasks.map{|t| t['title']}.include?(card.name)
     puts "Card titled #{card.name} already exists"
   else
-    puts "Creating #{card.name} in column #{card.list.name}"
+    puts "Trying to create #{card.name} in column #{card.list.name}"
     options = {}
     options['column_id'] = column_id
     options['description'] = "#{card.desc}\n\nDiese Kanboard-Aufgabe wurde aus [dieser Trello-Karte](#{card.url}) importiert."
     options['date_due'] = nil
-    options['date_due'] = card.due.iso8601 if card.due
-    @kanboard.create_task(target_project_id, card.name, options)
+    options['date_due'] = Date.parse(card.due.to_s).iso8601.to_s if card.due
+    result = @kanboard.create_task(target_project_id, card.name, options)
+    if result == false
+      puts "Creating #{card.name} failed"
+    end
   end
 end
 

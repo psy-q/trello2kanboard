@@ -29,9 +29,11 @@ module Kanboard
       end
 
       if response.status != 200
-        raise "Some shit happened: #{response.status}: #{response.body}" 
+        raise "Some shit happened during the request #{response.status}: #{response.body}" 
       else
-        return JSON.parse(response.body)['result']
+        parsed = JSON.parse(response.body)['result']
+        raise "Some shit happened in the response" if parsed == false
+        return parsed
       end
     end
 
