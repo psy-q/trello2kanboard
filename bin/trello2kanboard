@@ -9,7 +9,7 @@ require 'byebug'
 
 command = ARGV[0]
 @config = YAML::load_file('config/trello2kanboard.yml')
-@rpc = Kanboard::Client.new
+@kanboard = Kanboard::Client.new
 
 
 Trello.configure do |config|

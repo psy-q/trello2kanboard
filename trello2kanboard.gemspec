@@ -13,8 +13,9 @@ Gem::Specification.new do |s|
 
   s.add_dependency('ruby-trello', ["~> 2.0"])
   s.add_dependency('table_print', ["~> 1.5"])
-  s.add_dependency('jsonrpc-client', ["~> 0.1"])
+  #s.add_dependency('jsonrpc-client', ["~> 0.1"])
   s.add_dependency('faraday', ["~> 0.12"])
+  #s.add_dependency('saorin', ["~> 0.6"])
   #  s.add_dependency('jimson', ["~> 0.11"]) # pulls in rest-client < 2.0 which doesn't work on Ruby 2.4
 
 end
