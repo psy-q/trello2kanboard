@@ -7,3 +7,6 @@ kanboard:
   host:
   path:
   api_token:
+  user_map:
+    trellouser1: kanboarduser5
+    trellouser2: kanboarduser2

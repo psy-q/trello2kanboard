@@ -28,7 +28,8 @@ if command
     source_board_id = ARGV[1]
     target_project_id = ARGV[2]
     if source_board_id && target_project_id
-      import_board(source_board_id, target_project_id)
+      #byebug
+      @kanboard.import_board(source_board_id, target_project_id)
     else
       puts "Set source board ID and target project ID, please: import f00b4r 5"
     end
