@@ -3,7 +3,6 @@ require 'yaml'
 require 'cli'
 require 'trello'
 require 'kanboard'
-require 'kanboard/csv'
 require 'table_print'
 require 'byebug'
 
@@ -33,13 +32,11 @@ if command
     else
       puts "Set source board ID and target project ID, please: import f00b4r 5"
     end
-
-  # Converts a CSV file from Trello format to Kanboard format
-  elsif command == 'convert'
-    filename = ARGV[1]
-    convert_csv_to_kanboard(filename, '/tmp/kanboard.csv')
+  else
+    puts "Sorry, don't know the command '#{command}'"
+    exit 2
   end
 else
   puts "Please supply a command: import, list"
-  exit
+  exit 2
 end
