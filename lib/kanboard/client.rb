@@ -120,14 +120,28 @@ module Kanboard
         checklist.items.each do |item|
           status_map = { 'complete' => 2,
                          'incomplete' => 0 }
-          result = request(method: 'createSubtask', params: {task_id: task_id,
-                                                             title: item.name,
-                                                             status: status_map[item.state]})
+          result = request(method: 'createSubtask', params: { task_id: task_id,
+                                                              title: item.name,
+                                                              status: status_map[item.state]} )
           if result == false
             puts "Couldn't create subtask '#{item.name}' on #{task_id}"
           else
             puts "Subtask #{result} created on task #{task_id}"
           end
+        end
+      end
+    end
+
+    def import_comments(card, task_id)
+      card.comments.each do |comment|
+        user_id = find_user_id_for_trello_user(Trello::Member.find(comment.member_creator_id).username)
+        result = request(method: 'createComment', params: { task_id: task_id,
+                                                            content: comment.text,
+                                                            user_id: user_id })
+        if result == false
+          puts "Couldn't create comment on #{task_id}"
+        else
+          puts "Comment #{result} created on task #{task_id}"
         end
       end
     end
@@ -160,6 +174,10 @@ module Kanboard
           if card.checklists.count > 0
             puts "___ Now trying to import checklists as substasks"
             import_checklists(card, task_id)
+          end
+          if card.comments.count > 0
+            puts "___ Now trying to import comments"
+            import_comments(card, task_id)
           end
         end
       end
