@@ -12,4 +12,19 @@ An attempt to read Trello boards via API and write them to Kanboard (also via AP
 
 ### Configuration
 
-To be documented.
+Here's a commented version of config/trello2kanboard.yml:
+
+```yaml
+---
+trello:
+  developer_public_key: # Your developer public key for Trello goes here
+  member_token: # And this is for your member token
+
+kanboard:
+  host: somehost.example.com # The hostname (just the hostname!) of your Kanboard instance 
+  path: jsonrpc.php  # The path to jsonrpc.php on the Kanboard server
+  api_token: # Your Kanboard API token
+  user_map:  # A map of Trello usernames and which Kanboard users they match
+    trellouser1: kanboarduser1
+    trellouser2: surprisingkanboarduser
+```
