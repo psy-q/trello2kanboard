@@ -44,3 +44,8 @@ You probably have to prefix all these commands with `bundle exec` if you install
 `trello2kanboard import f00b4r1234 15` would import the Trello board with ID f00b4r1234 into the Kanboard project with ID 15. It will aggressively create any columns in Kanboard that exist in Trello. It will refuse to create Kanboard tasks that already exist, but other than that it does not much checking.
 
 It imports tasks in exactly the same order as they are in Trello.
+
+
+### Contributing
+
+Error handling is atrocious and mostly non-present, so if you wanted to write something in that direction, it would make everyone smile. Also, testing. If anyone wants to e.g. record correct requests and responses using [VCR](https://github.com/vcr/vcr) or something and write tests for them, that'd be fun as well. Just go ahead and submit pull requests.
