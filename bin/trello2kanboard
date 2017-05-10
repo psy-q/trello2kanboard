@@ -4,7 +4,6 @@ require 'cli'
 require 'trello'
 require 'kanboard'
 require 'table_print'
-require 'byebug'
 
 command = ARGV[0]
 @config = YAML::load_file('config/trello2kanboard.yml')
