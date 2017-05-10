@@ -28,3 +28,19 @@ kanboard:
     trellouser1: kanboarduser1
     trellouser2: surprisingkanboarduser
 ```
+
+
+### Usage
+
+You probably have to prefix all these commands with `bundle exec` if you installed the Ruby gems locally using bundler. So whenever it says `trello2kanboard list`, think `bundle exec trello2kanboard list`.
+
+
+#### Listing boards on both systems
+
+`trello2kanboard list` shows a list of Trello board your developer key/member token has access to, as well as a list of all existing projects in Kanboard. This is useful so you know the IDs to import to from/to on both sides. If you don't see a specific board in the Trello list, whoever is in charge of permissions for that Trello board needs to give your Trello user permission to see it.
+
+#### Importing boards from Trello to Kanboard
+
+`trello2kanboard import f00b4r1234 15` would import the Trello board with ID f00b4r1234 into the Kanboard project with ID 15. It will aggressively create any columns in Kanboard that exist in Trello. It will refuse to create Kanboard tasks that already exist, but other than that it does not much checking.
+
+It imports tasks in exactly the same order as they are in Trello.
