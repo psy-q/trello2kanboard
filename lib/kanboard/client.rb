@@ -31,9 +31,9 @@ module Kanboard
       if response.status != 200
         raise "Some shit happened during the request #{response.status}: #{response.body}" 
       else
-        parsed = JSON.parse(response.body)['result']
-        raise "Some shit happened in the response" if parsed == false
-        return parsed
+        parsed = JSON.parse(response.body)
+        raise "Error from Kanboard: #{parsed['error']}" if parsed['error']
+        return parsed['result']
       end
     end
 
@@ -72,7 +72,7 @@ module Kanboard
     end
    
     def create_column(project_id, name)
-      request(method: 'addColumn', params: {project_id: project_id, name: name})
+      request(method: 'addColumn', params: {project_id: project_id, title: name})
     end
 
     def create_task(project_id, title, options = {})
@@ -95,9 +95,13 @@ module Kanboard
     end
 
     def column_id_from_title(project_id, title)
-      columns(project_id).select{ |c| 
-        c if c['title'] == title 
-      }.first['id']
+      if columns(project_id) != []
+        columns(project_id).select{ |c| 
+          c if c['title'] == title 
+        }.first['id']
+      else
+        return nil
+      end
     end
 
     def checklists?(card); end
@@ -107,8 +111,8 @@ module Kanboard
       if @user_map
         kanboard_user = @user_map[trello_user]
         return false if kanboard_user == nil
-        result = request(method: 'getUserByName', params: {username: kanboard_user})
-        if result != false
+        result = request(method: 'getUserByName', params: { username: kanboard_user })
+        if result != false && result != nil && result.dig('id') != nil
           user = result['id']
         end
       end
@@ -134,21 +138,29 @@ module Kanboard
 
     def import_comments(card, task_id)
       card.comments.each do |comment|
-        user_id = find_user_id_for_trello_user(Trello::Member.find(comment.member_creator_id).username)
-        result = request(method: 'createComment', params: { task_id: task_id,
-                                                            content: comment.text,
-                                                            user_id: user_id })
-        if result == false
-          puts "Couldn't create comment on #{task_id}"
+        trello_username = Trello::Member.find(comment.member_creator_id).username
+        user_id = find_user_id_for_trello_user(trello_username)
+        if user_id == false
+          puts "Trello user '#{trello_username}' has no equivalent in Kanboard or the user_map entry in trello2kanboard.yml is missing. Cannot import comment: '#{comment}'"
         else
-          puts "Comment #{result} created on task #{task_id}"
+          result = request(method: 'createComment', params: { task_id: task_id,
+                                                              content: comment.text,
+                                                              user_id: user_id })
+          if result == false
+            puts "Couldn't create comment on #{task_id}"
+          else
+            puts "Comment #{result} created on task #{task_id}"
+          end
         end
       end
     end
 
     def import_card(card, target_project_id)
-      unless columns(target_project_id).map{|c| c['title']}.include?(card.list.name)
-        create_column(target_project_id, card.list.name)
+      # Create any columns that aren't there yet (or create a new column if there are none)
+      if columns(target_project_id) == [] || !columns(target_project_id).map{|c| c['title']}.include?(card.list.name)
+        puts "Creating column #{card.list.name}"
+        result = create_column(target_project_id, card.list.name)
+        raise "Couldn't create column #{card.list.name}: #{result}" if result == false or result == nil
       end
       column_id = column_id_from_title(target_project_id, card.list.name)
       existing_tasks = tasks(target_project_id, column_id)
@@ -164,7 +176,12 @@ module Kanboard
         # This can't work right now, since Trello doesn't care who created a card
         #options['creator_id'] = find_user_id_for_trello_user(card.creator)
         if card.members.count == 1
-          options['owner_id'] = find_user_id_for_trello_user(card.members[0].username)
+          kanboard_user = find_user_id_for_trello_user(card.members[0].username)
+          if kanboard_user == false 
+            puts "ERROR: Trello user '#{card.members[0].username}' has no equivalent in Kanboard or the user_map entry in trello2kanboard.yml is missing. Cannot assign this task to the correct user."
+          else
+            options['owner_id'] = kanboard_user
+          end
         end
         task_id = create_task(target_project_id, card.name, options)
         if task_id == false
