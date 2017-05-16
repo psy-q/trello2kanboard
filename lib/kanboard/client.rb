@@ -32,7 +32,7 @@ module Kanboard
         raise "Some shit happened during the request #{response.status}: #{response.body}" 
       else
         parsed = JSON.parse(response.body)
-        raise "Error from Kanboard: #{parsed['error']}" if parsed['error']
+        raise "--- Error from Kanboard: #{parsed['error']}" if parsed['error']
         return parsed['result']
       end
     end
@@ -104,16 +104,16 @@ module Kanboard
       end
     end
 
-    def checklists?(card); end
-
     def find_user_id_for_trello_user(trello_user)
-      user = false
+      user = nil
       if @user_map
         kanboard_user = @user_map[trello_user]
-        return false if kanboard_user == nil
+        return nil if kanboard_user == nil
         result = request(method: 'getUserByName', params: { username: kanboard_user })
-        if result != false && result != nil && result.dig('id') != nil
+        if result != false && result != nil
           user = result['id']
+        else
+          puts "+-+ WARNING: Kanboard user #{kanboard_user} does not exist, even though there is a mapping from Trello user #{trello_user}."
         end
       end
       return user
@@ -140,18 +140,28 @@ module Kanboard
       card.comments.each do |comment|
         trello_username = Trello::Member.find(comment.member_creator_id).username
         user_id = find_user_id_for_trello_user(trello_username)
-        if user_id == false
-          puts "Trello user '#{trello_username}' has no equivalent in Kanboard or the user_map entry in trello2kanboard.yml is missing. Cannot import comment: '#{comment}'"
+        if user_id == nil
+          puts "--- ERROR: Couldn't assign comment to trello user '#{trello_username}': #{comment.text}"
         else
           result = request(method: 'createComment', params: { task_id: task_id,
                                                               content: comment.text,
                                                               user_id: user_id })
           if result == false
-            puts "Couldn't create comment on #{task_id}"
+            puts "--- Couldn't create comment on #{task_id}"
           else
-            puts "Comment #{result} created on task #{task_id}"
+            puts "+++ Comment #{result} created on task #{task_id}"
           end
         end
+      end
+    end
+
+
+    def extract_owner(card)
+      kanboard_user = find_user_id_for_trello_user(card.members[0].username)
+      if kanboard_user == nil 
+        puts "--- ERROR: Trello user '#{card.members[0].username}' has no equivalent in Kanboard or the user_map entry in trello2kanboard.yml is missing. Cannot assign this task to the correct user."
+      else
+        return kanboard_user
       end
     end
 
@@ -173,27 +183,22 @@ module Kanboard
         options['description'] = "#{card.desc}\n\nDiese Kanboard-Aufgabe wurde aus [dieser Trello-Karte](#{card.url}) importiert."
         options['date_due'] = nil
         options['date_due'] = Date.parse(card.due.to_s).iso8601.to_s if card.due
-        # This can't work right now, since Trello doesn't care who created a card
-        #options['creator_id'] = find_user_id_for_trello_user(card.creator)
         if card.members.count == 1
-          kanboard_user = find_user_id_for_trello_user(card.members[0].username)
-          if kanboard_user == false 
-            puts "ERROR: Trello user '#{card.members[0].username}' has no equivalent in Kanboard or the user_map entry in trello2kanboard.yml is missing. Cannot assign this task to the correct user."
-          else
-            options['owner_id'] = kanboard_user
-          end
+          options['owner_id'] = extract_owner(card)
         end
+
         task_id = create_task(target_project_id, card.name, options)
+
         if task_id == false
-          puts "Error creating #{card.name}"
+          puts "--- Error creating #{card.name}. If this task belongs to a user, does that user have permission for this Kanboard project?"
         else
-          puts "Success: '#{card.name}' saved to Kanboard with ID #{task_id}"
+          puts "+++ Success: '#{card.name}' saved to Kanboard with ID #{task_id}"
           if card.checklists.count > 0
-            puts "___ Now trying to import checklists as substasks"
+            puts "-> Now trying to import checklists as substasks"
             import_checklists(card, task_id)
           end
           if card.comments.count > 0
-            puts "___ Now trying to import comments"
+            puts "-> Now trying to import comments"
             import_comments(card, task_id)
           end
         end
