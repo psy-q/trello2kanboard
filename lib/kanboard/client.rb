@@ -180,7 +180,7 @@ module Kanboard
         puts "Trying to create '#{card.name}' in column #{card.list.name}"
         options = {}
         options['column_id'] = column_id
-        options['description'] = "#{card.desc}\n\nDiese Kanboard-Aufgabe wurde aus [dieser Trello-Karte](#{card.url}) importiert."
+        options['description'] = "#{card.desc}\n\nThis task was imported from [the following card in Trello](#{card.url})."
         options['date_due'] = nil
         options['date_due'] = Date.parse(card.due.to_s).iso8601.to_s if card.due
         if card.members.count == 1
