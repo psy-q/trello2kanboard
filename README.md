@@ -50,6 +50,7 @@ It imports tasks in exactly the same order as they are in Trello.
 
   * Make absolutely sure that the Kanboard users you mention in trello2kanboard.yml have permission on the respective Kanboard projects. If they don't have permission, weird errors will pop up when trello2kanboard tries to assign comments and tasks to these people.
   * You can rerun trello2kanboard if some tasks have failed to import (e.g. because the user didn't have permissions), and trello2kanboard will skip creating tasks that already exist. So if you've successfully imported a task but the import failed because one of its comments mapped to a user without permission in Kanboard, you will have to delete the task in Kanboard, give the user permission and then run trello2kanboard again. Only this way, importing the failed comments will be attempted again.
+  * If a column is empty in Trello, it won't be created in Kanboard either.
 
 ### Contributing
 
