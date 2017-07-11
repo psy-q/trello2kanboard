@@ -70,6 +70,10 @@ module Kanboard
     def subtasks(task_id)
       request(method: 'getAllSubTasks', params: {task_id: task_id})
     end
+
+    def tags(project_id)
+      request(method: 'getTagsByProject', params: {project_id: project_id})
+    end
    
     def create_column(project_id, name)
       request(method: 'addColumn', params: {project_id: project_id, title: name})
@@ -81,11 +85,42 @@ module Kanboard
       request(method: 'createTask', params: options)
     end
 
+    def create_tag(project_id, tag)
+      options = {project_id: project_id,
+                 tag: tag}
+      puts "Trying to create tag '#{tag}'"
+      request(method: 'createTag', params: options)
+    end
+
+    def assign_tags(card, task_id, project_id)
+      tags = card.labels.map{|label| label.name unless label.name.blank?}.compact
+      if request(method: 'setTaskTags', params: {task_id: task_id,
+                                                  project_id: project_id,
+                                                  tags: tags})
+        puts "Tags #{tags.inspect} assigned to task ##{task_id}"
+      else
+        puts "Error assigning tags #{tags.inspect} to task ##{task_id}"
+      end
+    end
+
+    # Labels on the Trello side get turned into tags on the Kanboard side
+    def import_labels(project_id, labels)
+      tags = tags(project_id).map{|tag| tag['name']}
+      tags_to_create = labels - tags
+      tags_to_create.each do |tag|
+        create_tag(project_id, tag)
+      end
+    end
+
     def import_board(source_board_id, target_project_id)
       puts "Trying to import board #{source_board_id}"
+      board = Trello::Board.find(source_board_id)
+      if board.labels
+        labels = board.labels.map{|label| label.name unless label.name.blank?}.compact
+        import_labels(target_project_id, labels)
+      end
       begin
-        lists = Trello::Board.find(source_board_id).lists
-        lists.each do |list|
+        board.lists.each do |list|
           puts "Trying to import list #{list.id} '#{list.name}' with #{list.cards.count} cards"
           if project(target_project_id)
             import_list(list.id, target_project_id)
@@ -193,6 +228,10 @@ module Kanboard
           puts "--- Error creating #{card.name}. If this task belongs to a user, does that user have permission for this Kanboard project?"
         else
           puts "+++ Success: '#{card.name}' saved to Kanboard with ID #{task_id}"
+          if card.labels.count > 0
+            assign_tags(card, task_id, target_project_id)
+          end
+
           if card.checklists.count > 0
             puts "-> Now trying to import checklists as substasks"
             import_checklists(card, task_id)
@@ -211,6 +250,7 @@ module Kanboard
         import_card(card, target_project_id)
       end
     end
+
 
   end
 end
