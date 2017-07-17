@@ -32,7 +32,7 @@ module Kanboard
         raise "Some shit happened during the request #{response.status}: #{response.body}" 
       else
         parsed = JSON.parse(response.body)
-        raise "--- Error from Kanboard: #{parsed['error']}" if parsed['error']
+        raise "[E] Error from Kanboard: #{parsed['error']}" if parsed['error']
         return parsed['result']
       end
     end
@@ -251,6 +251,8 @@ module Kanboard
       end
     end
 
-
+    def remove_all_task_files(task_id)
+      request(method: 'removeAllTaskFiles', params: { task_id: task_id })
+    end
   end
 end
