@@ -1,5 +1,6 @@
 require 'faraday'
 require 'json'
+require 'open-uri'
 
 module Kanboard
 
@@ -29,7 +30,7 @@ module Kanboard
       end
 
       if response.status != 200
-        raise "Some shit happened during the request #{response.status}: #{response.body}" 
+        raise "Something unexpected happened during the request #{response.status}: #{response.body}" 
       else
         parsed = JSON.parse(response.body)
         raise "[E] Error from Kanboard: #{parsed['error']}" if parsed['error']
@@ -42,6 +43,45 @@ module Kanboard
       @config = config_file['kanboard']
       @user_map = @config['user_map'] if @config['user_map']
     end
+
+    ## Functions for finding IDs on the Kanboard side
+    
+    # Get column_id based on Trello title string
+    def column_id_from_title(project_id, title)
+      if columns(project_id) != []
+        columns(project_id).select{ |c| 
+          c if c['title'] == title 
+        }.first['id']
+      else
+        return nil
+      end
+    end
+
+    def find_user_id_for_trello_user(trello_user)
+      user = nil
+      if @user_map
+        kanboard_user = @user_map[trello_user]
+        return nil if kanboard_user.nil?
+        result = request(method: 'getUserByName', params: { username: kanboard_user })
+        if result != false && !result.nil?
+          user = result['id']
+        else
+          puts "[W] Kanboard user #{kanboard_user} does not exist, even though there is a mapping from Trello user #{trello_user}."
+        end
+      end
+      return user
+    end
+
+    def extract_owner(card)
+      kanboard_user = find_user_id_for_trello_user(card.members[0].username)
+      if kanboard_user == nil 
+        puts "[E] Trello user '#{card.members[0].username}' has no equivalent in Kanboard or the user_map entry in trello2kanboard.yml is missing. Cannot assign this task to the correct user."
+      else
+        return kanboard_user
+      end
+    end
+
+    ## Functions for listing things on the Kanboard side
 
     def projects
       request(method: 'getAllProjects')
@@ -74,7 +114,10 @@ module Kanboard
     def tags(project_id)
       request(method: 'getTagsByProject', params: {project_id: project_id})
     end
-   
+  
+
+    ## Functions for creating things
+
     def create_column(project_id, name)
       request(method: 'addColumn', params: {project_id: project_id, title: name})
     end
@@ -103,57 +146,15 @@ module Kanboard
       end
     end
 
-    # Labels on the Trello side get turned into tags on the Kanboard side
-    def import_labels(project_id, labels)
-      tags = tags(project_id).map{|tag| tag['name']}
-      tags_to_create = labels - tags
-      tags_to_create.each do |tag|
-        create_tag(project_id, tag)
-      end
+    ## Functions for removing things
+
+    def remove_all_task_files(task_id)
+      request(method: 'removeAllTaskFiles', params: { task_id: task_id })
     end
 
-    def import_board(source_board_id, target_project_id)
-      puts "[I] Trying to import board #{source_board_id}"
-      board = Trello::Board.find(source_board_id)
-      if board.labels
-        labels = board.labels.map{|label| label.name unless label.name.blank?}.compact
-        import_labels(target_project_id, labels)
-      end
-      begin
-        board.lists.each do |list|
-          puts "[I] Trying to import list #{list.id} '#{list.name}' with #{list.cards.count} cards"
-          if project(target_project_id)
-            import_list(list.id, target_project_id)
-          end
-        end
-      end
-    end
 
-    def column_id_from_title(project_id, title)
-      if columns(project_id) != []
-        columns(project_id).select{ |c| 
-          c if c['title'] == title 
-        }.first['id']
-      else
-        return nil
-      end
-    end
-
-    def find_user_id_for_trello_user(trello_user)
-      user = nil
-      if @user_map
-        kanboard_user = @user_map[trello_user]
-        return nil if kanboard_user.nil?
-        result = request(method: 'getUserByName', params: { username: kanboard_user })
-        if result != false && !result.nil?
-          user = result['id']
-        else
-          puts "[W] Kanboard user #{kanboard_user} does not exist, even though there is a mapping from Trello user #{trello_user}."
-        end
-      end
-      return user
-    end
-
+    ## Functions for importing 
+    
     def import_checklists(card, task_id)
       card.checklists.each do |checklist|
         checklist.items.each do |item|
@@ -191,14 +192,6 @@ module Kanboard
     end
 
 
-    def extract_owner(card)
-      kanboard_user = find_user_id_for_trello_user(card.members[0].username)
-      if kanboard_user == nil 
-        puts "[E] Trello user '#{card.members[0].username}' has no equivalent in Kanboard or the user_map entry in trello2kanboard.yml is missing. Cannot assign this task to the correct user."
-      else
-        return kanboard_user
-      end
-    end
 
     def import_card(card, target_project_id)
       # Create any columns that aren't there yet (or create a new column if there are none)
@@ -236,9 +229,15 @@ module Kanboard
             puts "[I] -> Now trying to import checklists as substasks"
             import_checklists(card, task_id)
           end
+
           if card.comments.count > 0
             puts "[I] -> Now trying to import comments"
             import_comments(card, task_id)
+          end
+
+          if card.attachments.count > 0
+            puts "[I] -> Now trying to import attachments"
+            import_attachments(card, task_id, target_project_id)
           end
         end
       end
@@ -251,8 +250,49 @@ module Kanboard
       end
     end
 
-    def remove_all_task_files(task_id)
-      request(method: 'removeAllTaskFiles', params: { task_id: task_id })
+    def import_attachments(card, task_id, target_project_id)
+      remove_all_task_files(task_id)
+      card.attachments.each do |attachment|
+        kanboard_attachment = Base64.encode64(open(attachment.url).read)
+        result = request(method: 'createTaskFile',
+                         params: {
+                           task_id: task_id,
+                           project_id: target_project_id,
+                           filename: attachment.name,
+                           blob: kanboard_attachment
+                         })
+        if result == false
+          puts "[E] -> Could not import #{attachment.name}"
+        elsif result.is_a?(Integer)
+          puts "[I] -> Imported attachment #{attachment.name}"
+        end
+      end
+    end
+
+    # Turn labels on the Trello side into tags on the Kanboard side
+    def import_labels(project_id, labels)
+      tags = tags(project_id).map{|tag| tag['name']}
+      tags_to_create = labels - tags
+      tags_to_create.each do |tag|
+        create_tag(project_id, tag)
+      end
+    end
+
+    def import_board(source_board_id, target_project_id)
+      puts "[I] Trying to import board #{source_board_id}"
+      board = Trello::Board.find(source_board_id)
+      if board.labels
+        labels = board.labels.map{|label| label.name unless label.name.blank?}.compact
+        import_labels(target_project_id, labels)
+      end
+      begin
+        board.lists.each do |list|
+          puts "[I] Trying to import list #{list.id} '#{list.name}' with #{list.cards.count} cards"
+          if project(target_project_id)
+            import_list(list.id, target_project_id)
+          end
+        end
+      end
     end
   end
 end
