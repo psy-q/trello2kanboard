@@ -143,9 +143,9 @@ module Kanboard
       user = nil
       if @user_map
         kanboard_user = @user_map[trello_user]
-        return nil if kanboard_user == nil
+        return nil if kanboard_user.nil?
         result = request(method: 'getUserByName', params: { username: kanboard_user })
-        if result != false && result != nil
+        if result != false && !result.nil?
           user = result['id']
         else
           puts "[W] Kanboard user #{kanboard_user} does not exist, even though there is a mapping from Trello user #{trello_user}."
