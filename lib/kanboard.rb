@@ -1,4 +1,3 @@
-require 'kanboard/base'
 require 'kanboard/client'
 
 module Kanboard
