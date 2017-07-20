@@ -1,15 +1,15 @@
 #!/usr/bin/env ruby
 require 'yaml'
 require 'cli'
-# require 'kanboard'
 require 'trello2kanboard'
+require 'pivotal2kanboard'
 
 command = ARGV[0]
-@config = YAML::load_file('config/trello2kanboard.yml')
+@config = YAML.load_file('config/trello2kanboard.yml')
 @t2k = Trello2Kanboard.new(@config)
-#@kanboard = Kanboard::Client.new(@config['kanboard'])
+@p2k = Pivotal2Kanboard.new(@config)
 
-if command 
+if command
   # Lists existing Trello boards/Kanboard projects via API
   if command == 'list'
     @t2k.list_trello_boards
@@ -20,16 +20,15 @@ if command
     source_board_id = ARGV[1]
     target_project_id = ARGV[2]
     if source_board_id && target_project_id
-      #byebug
       @t2k.import_board(source_board_id, target_project_id)
     else
-      puts "Set source board ID and target project ID, please: import f00b4r 5"
+      puts 'Set source board ID and target project ID, please: import f00b4r 5'
     end
   else
     puts "Sorry, don't know the command '#{command}'"
     exit 2
   end
 else
-  puts "Please supply a command: import, list"
+  puts 'Please supply a command: import, list'
   exit 2
 end
