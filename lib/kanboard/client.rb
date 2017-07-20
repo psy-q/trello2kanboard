@@ -8,22 +8,17 @@ module Kanboard
   # Mostly just gives more ruby-ish appearance to the various RPC calls
   class Client
 
-    def self.connection
-      config_file = YAML::load_file('config/trello2kanboard.yml')
-      @config = config_file['kanboard']
+    def request(body = {})
       @connection ||= Faraday.new(url: "https://#{@config['host']}/#{@config['path']}") do |connection|
         #connection.response :logger
         connection.adapter Faraday.default_adapter
         connection.ssl.verify = false
         connection.basic_auth('jsonrpc', @config['api_token']) 
       end
-    end
 
-    def request(body = {})
-      connection = Kanboard::Client.connection
       body['jsonrpc'] = '2.0'
       body['id'] = '1'
-      response = connection.post do |req|
+      response = @connection.post do |req|
         #req.url '/jsonrpc.php'
         req.headers['Content-Type'] = 'application/json'
         req.body = body.to_json
@@ -38,9 +33,8 @@ module Kanboard
       end
     end
 
-    def initialize
-      config_file = YAML::load_file('config/trello2kanboard.yml')
-      @config = config_file['kanboard']
+    def initialize(config)
+      @config = config
       @user_map = @config['user_map'] if @config['user_map']
     end
 
