@@ -6,36 +6,69 @@ PATH
       ruby-trello (~> 2.0)
       table_print (~> 1.5)
 
+PATH
+  remote: /tmp/tracker_api
+  specs:
+    tracker_api (1.7.1)
+      addressable
+      equalizer
+      excon
+      faraday
+      faraday_middleware
+      multi_json
+      representable
+      virtus
+
 GEM
   remote: https://rubygems.org/
   specs:
-    activemodel (5.0.2)
-      activesupport (= 5.0.2)
-    activesupport (5.0.2)
+    activemodel (5.1.2)
+      activesupport (= 5.1.2)
+    activesupport (5.1.2)
       concurrent-ruby (~> 1.0, >= 1.0.2)
       i18n (~> 0.7)
       minitest (~> 5.1)
       tzinfo (~> 1.1)
     addressable (2.5.1)
       public_suffix (~> 2.0, >= 2.0.2)
+    axiom-types (0.1.1)
+      descendants_tracker (~> 0.0.4)
+      ice_nine (~> 0.11.0)
+      thread_safe (~> 0.3, >= 0.3.1)
     byebug (9.0.6)
+    coercible (1.0.0)
+      descendants_tracker (~> 0.0.1)
     concurrent-ruby (1.0.5)
+    declarative (0.0.9)
+    declarative-option (0.1.0)
+    descendants_tracker (0.0.4)
+      thread_safe (~> 0.3, >= 0.3.1)
     domain_name (0.5.20170404)
       unf (>= 0.0.5, < 1.0.0)
+    equalizer (0.0.11)
+    excon (0.57.1)
     faraday (0.12.1)
       multipart-post (>= 1.2, < 3)
+    faraday_middleware (0.11.0.1)
+      faraday (>= 0.7.4, < 1.0)
     http-cookie (1.0.3)
       domain_name (~> 0.5)
-    i18n (0.8.1)
+    i18n (0.8.6)
+    ice_nine (0.11.2)
     json (2.1.0)
     mime-types (3.1)
       mime-types-data (~> 3.2015)
     mime-types-data (3.2016.0521)
-    minitest (5.10.1)
+    minitest (5.10.2)
+    multi_json (1.12.1)
     multipart-post (2.0.0)
     netrc (0.11.0)
-    oauth (0.5.1)
+    oauth (0.5.3)
     public_suffix (2.0.5)
+    representable (3.0.4)
+      declarative (< 0.1.0)
+      declarative-option (< 0.2.0)
+      uber (< 0.2.0)
     rest-client (2.0.2)
       http-cookie (>= 1.0.2, < 2.0)
       mime-types (>= 1.16, < 4.0)
@@ -50,15 +83,22 @@ GEM
     thread_safe (0.3.6)
     tzinfo (1.2.3)
       thread_safe (~> 0.1)
+    uber (0.1.0)
     unf (0.1.4)
       unf_ext
     unf_ext (0.0.7.4)
+    virtus (1.0.5)
+      axiom-types (~> 0.1)
+      coercible (~> 1.0)
+      descendants_tracker (~> 0.0, >= 0.0.3)
+      equalizer (~> 0.0, >= 0.0.9)
 
 PLATFORMS
   ruby
 
 DEPENDENCIES
   byebug
+  tracker_api!
   trello2kanboard!
 
 BUNDLED WITH
