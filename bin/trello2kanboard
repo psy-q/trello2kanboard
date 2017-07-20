@@ -1,25 +1,19 @@
 #!/usr/bin/env ruby
 require 'yaml'
 require 'cli'
-require 'trello'
-require 'kanboard'
-require 'table_print'
+# require 'kanboard'
+require 'trello2kanboard'
 
 command = ARGV[0]
 @config = YAML::load_file('config/trello2kanboard.yml')
-@kanboard = Kanboard::Client.new(@config['kanboard'])
-
-
-Trello.configure do |config|
-  config.developer_public_key = @config['trello']['developer_public_key']
-  config.member_token = @config['trello']['member_token']
-end
+@t2k = Trello2Kanboard.new(@config)
+#@kanboard = Kanboard::Client.new(@config['kanboard'])
 
 if command 
   # Lists existing Trello boards/Kanboard projects via API
   if command == 'list'
-    list_trello_boards
-    list_kanboard_projects
+    @t2k.list_trello_boards
+    @t2k.list_kanboard_projects
 
   # Imports cards from Trello to Kanboard via API
   elsif command == 'import'
@@ -27,7 +21,7 @@ if command
     target_project_id = ARGV[2]
     if source_board_id && target_project_id
       #byebug
-      @kanboard.import_board(source_board_id, target_project_id)
+      @t2k.import_board(source_board_id, target_project_id)
     else
       puts "Set source board ID and target project ID, please: import f00b4r 5"
     end
