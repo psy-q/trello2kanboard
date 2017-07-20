@@ -3,17 +3,14 @@ require 'json'
 require 'open-uri'
 
 module Kanboard
-
   # Very thin wrapper around the Kanboard JSON-RPC 2.0 API
   # Mostly just gives more ruby-ish appearance to the various RPC calls
   class Client
-
     def request(body = {})
       @connection ||= Faraday.new(url: "https://#{@config['host']}/#{@config['path']}") do |connection|
-        #connection.response :logger
         connection.adapter Faraday.default_adapter
         connection.ssl.verify = false
-        connection.basic_auth('jsonrpc', @config['api_token']) 
+        connection.basic_auth('jsonrpc', @config['api_token'])
       end
 
       body['jsonrpc'] = '2.0'
@@ -25,7 +22,7 @@ module Kanboard
       end
 
       if response.status != 200
-        raise "Something unexpected happened during the request #{response.status}: #{response.body}" 
+        raise "Something unexpected happened during the request #{response.status}: #{response.body}"
       else
         parsed = JSON.parse(response.body)
         raise "[E] Error from Kanboard: #{parsed['error']}" if parsed['error']
@@ -39,15 +36,13 @@ module Kanboard
     end
 
     ## Functions for finding IDs on the Kanboard side
-    
+
     # Get column_id based on Trello title string
     def column_id_from_title(project_id, title)
       if columns(project_id) != []
-        columns(project_id).select{ |c| 
-          c if c['title'] == title 
+        columns(project_id).select { |c|
+          c if c['title'] == title
         }.first['id']
-      else
-        return nil
       end
     end
 
@@ -82,15 +77,15 @@ module Kanboard
     end
 
     def project(id)
-      request(method: 'getProjectById', params: {project_id: id})
+      request(method: 'getProjectById', params: { project_id: id })
     end
 
     def columns(project_id)
-      request(method: 'getColumns', params: {project_id: project_id})
+      request(method: 'getColumns', params: { project_id: project_id })
     end
 
     def tasks(project_id, column_id = nil)
-      all_tasks = request(method: 'getAllTasks', params: {project_id: project_id})
+      all_tasks = request(method: 'getAllTasks', params: { project_id: project_id })
       if column_id != nil
         tasks = all_tasks.select { |task|
           task if task['column_id'].to_i == column_id.to_i
@@ -102,18 +97,17 @@ module Kanboard
     end
 
     def subtasks(task_id)
-      request(method: 'getAllSubTasks', params: {task_id: task_id})
+      request(method: 'getAllSubTasks', params: { task_id: task_id })
     end
 
     def tags(project_id)
-      request(method: 'getTagsByProject', params: {project_id: project_id})
+      request(method: 'getTagsByProject', params: { project_id: project_id })
     end
-  
 
     ## Functions for creating things
 
     def create_column(project_id, name)
-      request(method: 'addColumn', params: {project_id: project_id, title: name})
+      request(method: 'addColumn', params: { project_id: project_id, title: name })
     end
 
     def create_task(project_id, title, options = {})
@@ -123,17 +117,17 @@ module Kanboard
     end
 
     def create_tag(project_id, tag)
-      options = {project_id: project_id,
-                 tag: tag}
+      options = { project_id: project_id,
+                  tag: tag }
       puts "[I] Trying to create tag '#{tag}'"
       request(method: 'createTag', params: options)
     end
 
     def assign_tags(card, task_id, project_id)
-      tags = card.labels.map{|label| label.name unless label.name.blank?}.compact
-      if request(method: 'setTaskTags', params: {task_id: task_id,
+      tags = card.labels.map { |label| label.name unless label.name.blank? }.compact
+      if request(method: 'setTaskTags', params: { task_id: task_id,
                                                   project_id: project_id,
-                                                  tags: tags})
+                                                  tags: tags })
         puts "[I] Tags #{tags.inspect} assigned to task ##{task_id}"
       else
         puts "[E] Error assigning tags #{tags.inspect} to task ##{task_id}"
@@ -146,9 +140,8 @@ module Kanboard
       request(method: 'removeAllTaskFiles', params: { task_id: task_id })
     end
 
+    ## Functions for importing
 
-    ## Functions for importing 
-    
     def import_checklists(card, task_id)
       card.checklists.each do |checklist|
         checklist.items.each do |item|
@@ -156,7 +149,7 @@ module Kanboard
                          'incomplete' => 0 }
           result = request(method: 'createSubtask', params: { task_id: task_id,
                                                               title: item.name,
-                                                              status: status_map[item.state]} )
+                                                              status: status_map[item.state] } )
           if result == false
             puts "[E] Couldn't create subtask '#{item.name}' on #{task_id}"
           else
@@ -170,7 +163,7 @@ module Kanboard
       card.comments.each do |comment|
         trello_username = Trello::Member.find(comment.member_creator_id).username
         user_id = find_user_id_for_trello_user(trello_username)
-        if user_id == nil
+        if user_id.nil?
           puts "[E] Couldn't assign comment to trello user '#{trello_username}': #{comment.text}"
         else
           result = request(method: 'createComment', params: { task_id: task_id,
@@ -185,18 +178,16 @@ module Kanboard
       end
     end
 
-
-
     def import_card(card, target_project_id)
       # Create any columns that aren't there yet (or create a new column if there are none)
-      if columns(target_project_id) == [] || !columns(target_project_id).map{|c| c['title']}.include?(card.list.name)
+      if columns(target_project_id) == [] || !columns(target_project_id).map{ |c| c['title'] }.include?(card.list.name)
         puts "[I] Creating column #{card.list.name}"
         result = create_column(target_project_id, card.list.name)
-        raise "[E] Couldn't create column #{card.list.name}: #{result}" if result == false or result == nil
+        raise "[E] Couldn't create column #{card.list.name}: #{result}" if result == false || result.nil?
       end
       column_id = column_id_from_title(target_project_id, card.list.name)
       existing_tasks = tasks(target_project_id, column_id)
-      if existing_tasks.map{|t| t['title']}.include?(card.name)
+      if existing_tasks.map { |t| t['title'] }.include?(card.name)
         puts "[I] Card titled '#{card.name}' already exists"
       else
         puts "[I] Trying to create '#{card.name}' in column #{card.list.name}"
@@ -205,9 +196,7 @@ module Kanboard
         options['description'] = "#{card.desc}\n\nThis task was imported from [the following card in Trello](#{card.url})."
         options['date_due'] = nil
         options['date_due'] = Date.parse(card.due.to_s).iso8601.to_s if card.due
-        if card.members.count == 1
-          options['owner_id'] = extract_owner(card)
-        end
+        options['owner_id'] = extract_owner(card) if card.members.count == 1
 
         task_id = create_task(target_project_id, card.name, options)
 
@@ -215,22 +204,20 @@ module Kanboard
           puts "[E] Error creating #{card.name}. If this task belongs to a user, does that user have permission for this Kanboard project?"
         else
           puts "[I] Success: '#{card.name}' saved to Kanboard with ID #{task_id}"
-          if card.labels.count > 0
-            assign_tags(card, task_id, target_project_id)
-          end
+          assign_tags(card, task_id, target_project_id) if card.labels.count > 0
 
           if card.checklists.count > 0
-            puts "[I] -> Now trying to import checklists as substasks"
+            puts '[I] -> Now trying to import checklists as substasks'
             import_checklists(card, task_id)
           end
 
           if card.comments.count > 0
-            puts "[I] -> Now trying to import comments"
+            puts '[I] -> Now trying to import comments'
             import_comments(card, task_id)
           end
 
           if card.attachments.count > 0
-            puts "[I] -> Now trying to import attachments"
+            puts '[I] -> Now trying to import attachments'
             import_attachments(card, task_id, target_project_id)
           end
         end
@@ -265,7 +252,7 @@ module Kanboard
 
     # Turn labels on the Trello side into tags on the Kanboard side
     def import_labels(project_id, labels)
-      tags = tags(project_id).map{|tag| tag['name']}
+      tags = tags(project_id).map { |tag| tag['name'] }
       tags_to_create = labels - tags
       tags_to_create.each do |tag|
         create_tag(project_id, tag)
@@ -276,7 +263,7 @@ module Kanboard
       puts "[I] Trying to import board #{source_board_id}"
       board = Trello::Board.find(source_board_id)
       if board.labels
-        labels = board.labels.map{|label| label.name unless label.name.blank?}.compact
+        labels = board.labels.map { |label| label.name unless label.name.blank? }.compact
         import_labels(target_project_id, labels)
       end
       begin
