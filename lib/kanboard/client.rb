@@ -116,6 +116,17 @@ module Kanboard
       request(method: 'createTask', params: options)
     end
 
+    # blob: A base64 encoded string representing the file to attach
+    def create_task_file(task_id, project_id, filename, blob)
+      request(method: 'createTaskFile',
+              params: {
+                task_id: task_id,
+                project_id: project_id,
+                filename: filename,
+                blob: blob
+              })
+    end
+
     def create_tag(project_id, tag)
       options = { project_id: project_id,
                   tag: tag }
@@ -123,8 +134,7 @@ module Kanboard
       request(method: 'createTag', params: options)
     end
 
-    def assign_tags(card, task_id, project_id)
-      tags = card.labels.map { |label| label.name unless label.name.blank? }.compact
+    def assign_tags(tags, task_id, project_id)
       if request(method: 'setTaskTags', params: { task_id: task_id,
                                                   project_id: project_id,
                                                   tags: tags })
@@ -140,7 +150,7 @@ module Kanboard
       request(method: 'removeAllTaskFiles', params: { task_id: task_id })
     end
 
-    ## Functions for importing
+    ## Trello-specific functions for importing
 
     def import_checklists(card, task_id)
       card.checklists.each do |checklist|
@@ -204,7 +214,10 @@ module Kanboard
           puts "[E] Error creating #{card.name}. If this task belongs to a user, does that user have permission for this Kanboard project?"
         else
           puts "[I] Success: '#{card.name}' saved to Kanboard with ID #{task_id}"
-          assign_tags(card, task_id, target_project_id) if card.labels.count > 0
+          if card.labels.count > 0
+            tags = card.labels.map { |label| label.name unless label.name.blank? }.compact
+            assign_tags(tags, task_id, target_project_id) 
+          end
 
           if card.checklists.count > 0
             puts '[I] -> Now trying to import checklists as substasks'
@@ -235,13 +248,8 @@ module Kanboard
       remove_all_task_files(task_id)
       card.attachments.each do |attachment|
         kanboard_attachment = Base64.encode64(open(attachment.url).read)
-        result = request(method: 'createTaskFile',
-                         params: {
-                           task_id: task_id,
-                           project_id: target_project_id,
-                           filename: attachment.name,
-                           blob: kanboard_attachment
-                         })
+        result = create_task_file(task_id, target_project_id, attachment.name, kanboard_attachment)
+
         if result == false
           puts "[E] -> Could not import #{attachment.name}"
         elsif result.is_a?(Integer)
