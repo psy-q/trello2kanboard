@@ -24,11 +24,15 @@ kanboard:
   host: somehost.example.com # The hostname (just the hostname!) of your Kanboard instance 
   path: jsonrpc.php  # The path to jsonrpc.php on the Kanboard server
   api_token: # Your Kanboard API token
+  comment_fallback_user_id: # For comments whose users don't exist in Kanboard
   user_map:  # A map of Trello usernames and which Kanboard users they match
     trellouser1: kanboarduser1
     trellouser2: surprisingkanboarduser
 ```
 
+#### Details about configuration
+
+**kanboard.comment_fallback_user_id:** Sometimes a Trello user has left your organization and is unable to log into your Kanboard instance. But Kanboard demands a user_id for every comment. To solve this, you can create a fallback user in Kanboard (e.g. called "A former Trello user"). Any comments whose users don't exist in Kanboard will be assigned to this user. The original Trello username will be added to the comment text itself in this case, so that you can at least trace the comment's origin back to the Trello user.
 
 ### Usage
 

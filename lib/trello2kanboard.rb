@@ -5,6 +5,7 @@ require 'table_print'
 class Trello2Kanboard
   def initialize(config)
     @config = config
+    @user_map = @config['kanboard']['user_map'] if @config['kanboard']['user_map']
     @client = Kanboard::Client.new(config['kanboard'])
     Trello.configure do |c|
       c.developer_public_key = @config['trello']['developer_public_key']
@@ -85,11 +86,16 @@ class Trello2Kanboard
       trello_username = Trello::Member.find(comment.member_creator_id).username
       user_id = find_user_id_for_trello_user(trello_username)
       if user_id.nil?
-        puts "[E] Couldn't assign comment to trello user '#{trello_username}': #{comment.text}"
+        puts "[W] Couldn't assign comment to Trello user '#{trello_username}': #{comment.text}"
+
+        # Can we assign the comment to a fallback user?
+        if @config['kanboard']['comment_fallback_user_id'] > 0
+          puts "[I] Using fallback user with ID #{@config['kanboard']['comment_fallback_user_id']} instead"
+          text_with_signature = "#{comment.text}\n- #{trello_username}"
+          result = @client.create_comment(task_id, @config['kanboard']['comment_fallback_user_id'], text_with_signature)
+        end
       else
-        result = @client.request(method: 'createComment', params: { task_id: task_id,
-                                                            content: comment.text,
-                                                            user_id: user_id })
+        result = @client.create_comment(task_id, user_id, comment.text)
         if result == false
           puts "[E] Couldn't create comment on #{task_id}"
         else
@@ -158,13 +164,19 @@ class Trello2Kanboard
   def import_attachments(card, task_id, target_project_id)
     @client.remove_all_task_files(task_id)
     card.attachments.each do |attachment|
-      kanboard_attachment = Base64.encode64(open(attachment.url).read)
-      result = @client.create_task_file(task_id, target_project_id, attachment.name, kanboard_attachment)
+      begin
+        kanboard_attachment = Base64.encode64(open(attachment.url).read)
+        result = @client.create_task_file(task_id, target_project_id, attachment.name, kanboard_attachment)
 
-      if result == false
-        puts "[E] -> Could not import #{attachment.name}"
-      elsif result.is_a?(Integer)
-        puts "[I] -> Imported attachment #{attachment.name}"
+        if result == false
+          puts "[E] -> Could not import #{attachment.name}"
+        elsif result.is_a?(Integer)
+          puts "[I] -> Imported attachment #{attachment.name}"
+        end
+      rescue OpenURI::HTTPError => e
+        puts "[E] -> Attachment import failed for #{attachment.url}: #{e.inspect}"
+      rescue Net::ReadTimeout
+        puts "[E] -> Timed out while trying to fetch #{attachment.url}"
       end
     end
   end

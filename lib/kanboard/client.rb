@@ -9,7 +9,6 @@ module Kanboard
 
     def initialize(config)
       @config = config
-      @user_map = @config['user_map'] if @config['user_map']
     end
 
     def request(body = {})
@@ -97,6 +96,14 @@ module Kanboard
       puts "[I] Trying to create tag '#{tag}'"
       request(method: 'createTag', params: options)
     end
+
+
+    def create_comment(task_id, user_id, text)
+      request(method: 'createComment', params: { task_id: task_id,
+                                                 content: text,
+                                                 user_id: user_id })
+    end
+
 
     def assign_tags(tags, task_id, project_id)
       if request(method: 'setTaskTags', params: { task_id: task_id,

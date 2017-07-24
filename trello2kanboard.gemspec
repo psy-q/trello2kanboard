@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name         = 'trello2kanboard'
-  s.version      = '0.3.1'
+  s.version      = '0.4.0'
   s.licenses     = ['MIT']
   s.summary      = "Converts CSV files exported from Trello into a format that can be imported to Kanboard"
   s.description  = "Export a CSV file from Trello, save it locally, create a config file that maps users and columns and run this script. The output should be a CSV file that can be imported into Kanboard."
