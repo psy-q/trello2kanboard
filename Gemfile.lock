@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    trello2kanboard (0.3.1)
+    trello2kanboard (0.4.0)
       faraday (~> 0.12)
       ruby-trello (~> 2.0)
       table_print (~> 1.5)
