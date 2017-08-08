@@ -60,6 +60,10 @@ module Kanboard
       tasks
     end
 
+    def all_tasks(project_id)
+      request(method: 'getAllTasks', params: { project_id: project_id })
+    end
+
     def subtasks(task_id)
       request(method: 'getAllSubTasks', params: { task_id: task_id })
     end
@@ -116,6 +120,44 @@ module Kanboard
     end
 
     ## Functions for removing things
+    def remove_column(column_id)
+      request(method: 'removeColumn', params: { column_id: column_id })
+    end
+
+    def remove_task(task_id)
+      request(method: 'removeTask', params: { task_id: task_id })
+    end
+
+    def remove_all_tasks(project_id)
+      all_tasks(project_id).each do |task|
+        result = remove_task(task['id'])
+        if result == true
+          puts "[I] Removed task #{task['id']}: '#{task['title']}'"
+        else
+          puts "[E] Failed to remove task #{task['id']}: '#{task['title']}'"
+        end
+      end
+    end
+
+    def remove_all_columns(project_id)
+      columns(project_id).each do |column|
+        result = remove_column(column['id'])
+        if result == true
+          puts "[I] Removed column #{column['id']}: '#{column['title']}'"
+        else
+          puts "[E] Failed to remove column #{column['id']}: '#{column['title']}'"
+        end
+      end
+    end
+
+    # Kill everything about a project (tasks, then columns)
+    # but leave users, title, settings, permissions etc. intact.
+    # Useful for clearing out a project before attempting an import
+    def nuke(project_id)
+      remove_all_tasks(project_id)
+      remove_all_columns(project_id)
+    end
+
     def remove_all_task_files(task_id)
       request(method: 'removeAllTaskFiles', params: { task_id: task_id })
     end
