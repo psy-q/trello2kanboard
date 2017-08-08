@@ -1,24 +1,24 @@
 #!/usr/bin/env ruby
 require 'yaml'
 require 'cli'
-require 'trello2kanboard'
+require 'pivotal2kanboard'
 
 command = ARGV[0]
 @config = YAML.load_file('config/trello2kanboard.yml')
-@t2k = Trello2Kanboard.new(@config)
+@p2k = Pivotal2Kanboard.new(@config)
 
 if command
   # Lists existing Trello boards/Kanboard projects via API
   if command == 'list'
-    @t2k.list_trello_boards
-    @t2k.list_kanboard_projects
+    @p2k.list_pivotal_projects
+    @p2k.list_kanboard_projects
 
   # Imports cards from Trello to Kanboard via API
   elsif command == 'import'
-    source_board_id = ARGV[1]
+    source_project_id = ARGV[1]
     target_project_id = ARGV[2]
-    if source_board_id && target_project_id
-      @t2k.import_board(source_board_id, target_project_id)
+    if source_project_id && target_project_id
+      @p2k.import_project(source_project_id, target_project_id)
     else
       puts 'Set source board ID and target project ID, please: import f00b4r 5'
     end
