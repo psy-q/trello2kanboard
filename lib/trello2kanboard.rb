@@ -6,6 +6,7 @@ class Trello2Kanboard
   def initialize(config)
     @config = config
     @user_map = @config['kanboard']['user_map'] if @config['kanboard']['user_map']
+    @requests = 0
     @client = Kanboard::Client.new(config['kanboard'])
     Trello.configure do |c|
       c.developer_public_key = @config['trello']['developer_public_key']
@@ -30,6 +31,14 @@ class Trello2Kanboard
     tp projects, 'id', 'name', url: { width: 255 }
   end
 
+  def throttle
+    @requests += 1
+    if @requests >= 60 
+      puts "Sleeping for 60 seconds in order not to trigger rate limit"
+      sleep 60.0
+      @requests = 0
+    end
+  end
 
   # Get column_id based on Trello title string
   def column_id_from_title(project_id, title)
@@ -66,7 +75,9 @@ class Trello2Kanboard
 
   def import_checklists(card, task_id)
     card.checklists.each do |checklist|
+      throttle
       checklist.items.each do |item|
+        throttle
         status_map = { 'complete' => 2,
                        'incomplete' => 0 }
         result = @client.request(method: 'createSubtask', params: { task_id: task_id,
@@ -83,6 +94,7 @@ class Trello2Kanboard
 
   def import_comments(card, task_id)
     card.comments.each do |comment|
+      throttle
       trello_username = Trello::Member.find(comment.member_creator_id).username
       user_id = find_user_id_for_trello_user(trello_username)
       if user_id.nil?
@@ -158,12 +170,14 @@ class Trello2Kanboard
     list = Trello::List.find(list_id)
     list.cards.each do |card|
       import_card(card, target_project_id)
+      throttle
     end
   end
 
   def import_attachments(card, task_id, target_project_id)
     @client.remove_all_task_files(task_id)
     card.attachments.each do |attachment|
+      throttle
       begin
         kanboard_attachment = Base64.encode64(open(attachment.url).read)
         result = @client.create_task_file(task_id, target_project_id, attachment.name, kanboard_attachment)
@@ -199,6 +213,7 @@ class Trello2Kanboard
     end
     begin
       board.lists.each do |list|
+        throttle
         puts "[I] Trying to import list #{list.id} '#{list.name}' with #{list.cards.count} cards"
         if @client.project(target_project_id)
           import_list(list.id, target_project_id)
