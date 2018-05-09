@@ -72,6 +72,10 @@ module Kanboard
       request(method: 'getTagsByProject', params: { project_id: project_id })
     end
 
+    def project_users(project_id)
+      request(method: 'getProjectUsers', params: { project_id: project_id })
+    end
+
     def search(project_id, string)
       request(method: 'searchTasks', params: { project_id: project_id, query: string })
     end
