@@ -72,6 +72,10 @@ module Kanboard
       request(method: 'getTagsByProject', params: { project_id: project_id })
     end
 
+    def search(project_id, string)
+      request(method: 'searchTasks', params: { project_id: project_id, query: string })
+    end
+
     ## Functions for creating things
     def create_column(project_id, name)
       request(method: 'addColumn', params: { project_id: project_id, title: name })
