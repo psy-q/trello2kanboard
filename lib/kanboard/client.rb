@@ -21,7 +21,6 @@ module Kanboard
       body['jsonrpc'] = '2.0'
       body['id'] = '1'
       response = @connection.post do |req|
-        #req.url '/jsonrpc.php'
         req.headers['Content-Type'] = 'application/json'
         req.body = body.to_json
       end
@@ -76,6 +75,14 @@ module Kanboard
       request(method: 'getProjectUsers', params: { project_id: project_id })
     end
 
+    def swimlanes(project_id)
+      request(method: 'getAllSwimlanes', params: { project_id: project_id })
+    end
+
+    def swimlane_by_name(project_id, name)
+      request(method: 'getSwimlaneByName', params: { project_id: project_id, name: name })
+    end
+
     def search(project_id, string)
       request(method: 'searchTasks', params: { project_id: project_id, query: string })
     end
@@ -109,13 +116,11 @@ module Kanboard
       request(method: 'createTag', params: options)
     end
 
-
     def create_comment(task_id, user_id, text)
       request(method: 'createComment', params: { task_id: task_id,
                                                  content: text,
                                                  user_id: user_id })
     end
-
 
     def assign_tags(tags, task_id, project_id)
       if request(method: 'setTaskTags', params: { task_id: task_id,
@@ -169,5 +174,49 @@ module Kanboard
     def remove_all_task_files(task_id)
       request(method: 'removeAllTaskFiles', params: { task_id: task_id })
     end
+
+    # Functions for moving things
+    def move_task_to_project(project_id, task_id, column_id, swimlane_id)
+      request(method: 'moveTaskToProject', params: { 
+        project_id: project_id,
+        task_id: task_id,
+        column_id: column_id,
+        swimlane_id: swimlane_id
+      })
+    end
+
+    def bulk_move_tasks(project_id, query, to_swimlane_name, to_column_name) 
+      tasks_to_move = search(project_id, query)
+      raise "No tasks matching query '#{query}' found to move" if tasks_to_move == nil || tasks_to_move.count == 0
+
+      begin
+        to_swimlane = swimlane_by_name(project_id, to_swimlane_name)
+      rescue
+        raise "to_swimlane called '#{to_swimlane_name}' not found"
+      end
+
+      to_column = columns(project_id).select { |col| col['title'] == to_column_name }.first
+      raise "to_column called '#{to_column_name}' not found" if to_column.nil?
+
+      tasks_to_move.each do |task|
+        puts "Moving task #{task['title']} to column #{to_column['title']} (#{to_column['id']})"
+        result = move_task_to_project(project_id, task['id'].to_i, 
+                             to_column['id'].to_i, to_swimlane['id'].to_i)
+        if result == true
+          puts 'Move successful'
+          if task['is_active'].to_i == 0
+            puts 'Closing task because it was closed before'
+            close_task(task['id'].to_i)
+          end
+        else
+          puts 'Problem moving'
+        end
+      end
+    end
+
+    def close_task(task_id)
+      request(method: 'closeTask', params: { task_id: task_id })
+    end
+
   end
 end
