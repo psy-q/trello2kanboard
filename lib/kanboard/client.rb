@@ -214,6 +214,14 @@ module Kanboard
       end
     end
 
+    def bulk_move_to_same_column_in_all_swimlanes(project_id, query, to_column_name)
+      swimlanes(project_id).each do |swimlane|
+        puts "Processing swimlane '#{swimlane['name']}' using query #{query} swimlane:\"#{swimlane['name']}\""
+        bulk_move_tasks(project_id, "#{query} swimlane:\"#{swimlane['name']}\"", 
+                        swimlane['name'], to_column_name) 
+      end
+    end
+
     def close_task(task_id)
       request(method: 'closeTask', params: { task_id: task_id })
     end

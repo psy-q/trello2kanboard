@@ -33,7 +33,7 @@ class Trello2Kanboard
 
   def throttle
     @requests += 1
-    if @requests >= 60 
+    if @requests >= 30 
       puts "Sleeping for 60 seconds in order not to trigger rate limit"
       sleep 60.0
       @requests = 0
@@ -169,8 +169,8 @@ class Trello2Kanboard
   def import_list(list_id, target_project_id)
     list = Trello::List.find(list_id)
     list.cards.each do |card|
-      import_card(card, target_project_id)
       throttle
+      import_card(card, target_project_id)
     end
   end
 
