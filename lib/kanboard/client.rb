@@ -231,8 +231,12 @@ module Kanboard
     def bulk_move_to_same_column_in_all_swimlanes(project_id, query, to_column_name)
       swimlanes(project_id).each do |swimlane|
         puts "Processing swimlane '#{swimlane['name']}' using query #{query} swimlane:\"#{swimlane['name']}\""
-        bulk_move_tasks(project_id, "#{query} swimlane:\"#{swimlane['name']}\"", 
-                        swimlane['name'], to_column_name) 
+        begin
+          bulk_move_tasks(project_id, "#{query} swimlane:\"#{swimlane['name']}\"", 
+                          swimlane['name'], to_column_name) 
+        rescue Exception => e
+          puts "  -> Scary: #{e} during move"
+        end
       end
     end
 
