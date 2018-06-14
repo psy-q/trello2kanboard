@@ -47,6 +47,14 @@ module Kanboard
       request(method: 'getColumns', params: { project_id: project_id })
     end
 
+    def task(task_id)
+      request(method: 'getTask', params: { task_id: task_id })
+    end
+
+    def task_tags(task_id)
+      request(method: 'getTaskTags', params: { task_id: task_id })
+    end
+
     def tasks(project_id, column_id = nil)
       all_tasks = request(method: 'getAllTasks', params: { project_id: project_id })
       if column_id != nil
@@ -130,6 +138,12 @@ module Kanboard
       else
         puts "[E] Error assigning tags #{tags.inspect} to task ##{task_id}"
       end
+    end
+
+    def add_tags(new_tags, task_id, project_id)
+      existing_tags = task_tags(task_id).collect {|k, v| v }
+      combined_tags = existing_tags | new_tags
+      assign_tags(combined_tags, task_id, project_id)
     end
 
     ## Functions for removing things
