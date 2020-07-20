@@ -1,3 +1,8 @@
+# This project has moved to GitLab on June 4, 2018
+
+Please do not use this repository, use [the one on gitlab.com](https://gitlab.com/psy-q/trello2kanboard).
+
+
 ## trello2kanboard
 
 An attempt to read Trello boards via API and write them to Kanboard (also via API).
