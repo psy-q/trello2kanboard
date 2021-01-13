@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name         = 'trello2kanboard'
-  s.version      = '0.4.1'
+  s.version      = '0.4.2'
   s.licenses     = ['MIT']
   s.summary      = "Imports kanban boards from Trello to Kanboard via API"
   s.description  = "Connects to both services and allows you to import boards, columns and tasks from Trello to Kanboard."
