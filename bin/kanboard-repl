@@ -1,0 +1,17 @@
+#!/usr/bin/env ruby
+
+require 'yaml'
+require 'cli'
+require 'trello2kanboard'
+require 'pry'
+
+@config = YAML.load_file('config/trello2kanboard.yml')
+client = Kanboard::Client.new(@config['kanboard'])
+
+
+puts "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-"
+puts "Your client object is called 'client' and should be"
+puts "configured and ready to go."
+puts "You can use all the features of the 'pry' debugger."
+puts "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-"
+require 'pry'; binding.pry
